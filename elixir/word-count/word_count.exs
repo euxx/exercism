@@ -8,12 +8,12 @@ defmodule Words do
   def count(sentence) do
     String.downcase(sentence)
     |> String.split(~r{[,:!&@$%^_ ]+})
-    |> Enum.reduce(%{}, &count_word(&1, &2))
+    |> Enum.reduce(%{}, &count_word/2)
   end
 
   defp count_word("", acc), do: acc
   defp count_word(word, acc) do
-    count = if acc[word], do: acc[word] + 1, else: 1
+    count = Map.get(acc, word, 0) + 1
     Map.update(acc, word, count, &(&1 + 1))
   end
 end
