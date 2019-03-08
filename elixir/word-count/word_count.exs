@@ -7,13 +7,9 @@ defmodule Words do
   @spec count(String.t()) :: map
   def count(sentence) do
     String.downcase(sentence)
-    |> String.split(~r{[,:!&@$%^_ ]+})
-    |> Enum.reduce(%{}, &count_word/2)
-  end
-
-  defp count_word("", acc), do: acc
-  defp count_word(word, acc) do
-    count = Map.get(acc, word, 0) + 1
-    Map.update(acc, word, count, &(&1 + 1))
+    |> String.split(~r/[^[:alnum:]\-]/u, trim: true)
+    |> Enum.reduce(%{}, fn word, acc ->
+      Map.update(acc, word, 1, &(&1 + 1))
+    end)
   end
 end
