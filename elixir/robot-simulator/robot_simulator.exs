@@ -23,58 +23,51 @@ defmodule RobotSimulator do
   Valid instructions are: "R" (turn right), "L", (turn left), and "A" (advance)
   """
   @spec simulate(robot :: any, instructions :: String.t()) :: any
-  def simulate(%{position: position, direction: direction}, instructions) do
-    do_simulate(position, direction, String.split(instructions, "", trim: true))
+  def simulate(robot, instructions) do
+    do_simulate(robot, String.split(instructions, "", trim: true))
   end
 
-  defp do_simulate(_, _, [h | _]) when not(h in ["A", "L", "R"]) do
+  defp do_simulate(_, [h | _]) when not(h in ["A", "L", "R"]) do
     {:error, "invalid instruction"}
   end
 
-  defp do_simulate(position, direction, []), do: create(direction, position)
+  defp do_simulate(robot, []), do: robot
 
-  defp do_simulate({x, y}, :north, [h | t]) do
-    {direction, position} =
-      case h do
-        "A" -> {:north, {x, y + 1}}
-        "L" -> {:west, {x, y}}
-        "R" -> {:east, {x, y}}
+  defp do_simulate(robot, [h | t]) when h == "A" do
+    {x, y} = position(robot)
+    robot =
+      case direction(robot) do
+        :north -> Map.put(robot, :position, {x, y + 1})
+        :east  -> Map.put(robot, :position, {x + 1, y})
+        :south -> Map.put(robot, :position, {x, y - 1})
+        :west  -> Map.put(robot, :position, {x - 1, y})
       end
 
-    do_simulate(position, direction, t)
+    do_simulate(robot, t)
   end
 
-  defp do_simulate({x, y}, :east, [h | t]) do
-    {direction, position} =
-      case h do
-        "A" -> {:east, {x + 1, y}}
-        "L" -> {:north, {x, y}}
-        "R" -> {:south, {x, y}}
+  defp do_simulate(robot, [h | t]) when h == "L" do
+    robot =
+      case direction(robot) do
+        :north -> Map.put(robot, :direction, :west)
+        :east  -> Map.put(robot, :direction, :north)
+        :south -> Map.put(robot, :direction, :east)
+        :west  -> Map.put(robot, :direction, :south)
       end
 
-    do_simulate(position, direction, t)
+    do_simulate(robot, t)
   end
 
-  defp do_simulate({x, y}, :south, [h | t]) do
-    {direction, position} =
-      case h do
-        "A" -> {:south, {x, y - 1}}
-        "L" -> {:east, {x, y}}
-        "R" -> {:west, {x, y}}
+  defp do_simulate(robot, [h | t]) when h == "R" do
+    robot =
+      case direction(robot) do
+        :north -> Map.put(robot, :direction, :east)
+        :east  -> Map.put(robot, :direction, :south)
+        :south -> Map.put(robot, :direction, :west)
+        :west  -> Map.put(robot, :direction, :north)
       end
 
-    do_simulate(position, direction, t)
-  end
-
-  defp do_simulate({x, y}, :west, [h | t]) do
-    {direction, position} =
-      case h do
-        "A" -> {:west, {x - 1, y}}
-        "L" -> {:south, {x, y}}
-        "R" -> {:north, {x, y}}
-      end
-
-    do_simulate(position, direction, t)
+    do_simulate(robot, t)
   end
 
   @doc """
