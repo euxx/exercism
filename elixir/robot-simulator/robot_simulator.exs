@@ -6,7 +6,9 @@ defmodule RobotSimulator do
   """
   @valid_directions [:north, :east, :south, :west]
   @spec create(direction :: atom, position :: {integer, integer}) :: any
-  def create(direction \\ :north, {x, y} = position \\ {0, 0})
+
+  def create(direction \\ :north, position \\ {0, 0})
+  def create(direction,  {x, y} = position)
   when (direction in @valid_directions) and is_integer(x) and is_integer(y) do
     %{direction: direction, position: position}
   end
@@ -27,48 +29,46 @@ defmodule RobotSimulator do
     do_simulate(robot, String.split(instructions, "", trim: true))
   end
 
-  defp do_simulate(_, [h | _]) when not(h in ["A", "L", "R"]) do
-    {:error, "invalid instruction"}
-  end
-
   defp do_simulate(robot, []), do: robot
 
-  defp do_simulate(robot, [h | t]) when h == "A" do
+  defp do_simulate(robot, ["A" | t]) do
     {x, y} = position(robot)
     robot =
       case direction(robot) do
-        :north -> Map.put(robot, :position, {x, y + 1})
-        :east  -> Map.put(robot, :position, {x + 1, y})
-        :south -> Map.put(robot, :position, {x, y - 1})
-        :west  -> Map.put(robot, :position, {x - 1, y})
+        :north -> %{robot | position: {x, y + 1}}
+        :east  -> %{robot | position: {x + 1, y}}
+        :south -> %{robot | position: {x, y - 1}}
+        :west  -> %{robot | position: {x - 1, y}}
       end
 
     do_simulate(robot, t)
   end
 
-  defp do_simulate(robot, [h | t]) when h == "L" do
+  defp do_simulate(robot, ["L" | t]) do
     robot =
       case direction(robot) do
-        :north -> Map.put(robot, :direction, :west)
-        :east  -> Map.put(robot, :direction, :north)
-        :south -> Map.put(robot, :direction, :east)
-        :west  -> Map.put(robot, :direction, :south)
+        :north -> %{robot | direction: :west}
+        :east  -> %{robot | direction: :north}
+        :south -> %{robot | direction: :east}
+        :west  -> %{robot | direction: :south}
       end
 
     do_simulate(robot, t)
   end
 
-  defp do_simulate(robot, [h | t]) when h == "R" do
+  defp do_simulate(robot, ["R" | t]) do
     robot =
       case direction(robot) do
-        :north -> Map.put(robot, :direction, :east)
-        :east  -> Map.put(robot, :direction, :south)
-        :south -> Map.put(robot, :direction, :west)
-        :west  -> Map.put(robot, :direction, :north)
+        :north -> %{robot | direction: :east}
+        :east  -> %{robot | direction: :south}
+        :south -> %{robot | direction: :west}
+        :west  -> %{robot | direction: :north}
       end
 
     do_simulate(robot, t)
   end
+
+  defp do_simulate(_, _), do: {:error, "invalid instruction"}
 
   @doc """
   Return the robot's direction.
