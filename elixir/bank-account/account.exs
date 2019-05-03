@@ -13,7 +13,7 @@ defmodule BankAccount do
   """
   @spec open_bank() :: account
   def open_bank() do
-    {:ok, account} = BankServer.start()
+    {:ok, account} = Agent.start(fn -> 0 end)
     account
   end
 
@@ -21,15 +21,15 @@ defmodule BankAccount do
   Close the bank. Makes the account unavailable.
   """
   @spec close_bank(account) :: none
-  def close_bank(account), do: GenServer.stop(account)
+  def close_bank(account), do: Agent.stop(account)
 
   @doc """
   Get the account's balance.
   """
   @spec balance(account) :: integer
   def balance(account) do
-    operation = fn -> BankServer.get_balance(account) end
-    operation_based_on_state(account, operation)
+    fn -> Agent.get(account, &(&1)) end
+    |> action_based_on_state(account)
   end
 
   @doc """
@@ -37,40 +37,11 @@ defmodule BankAccount do
   """
   @spec update(account, integer) :: any
   def update(account, amount) do
-    operation = fn -> BankServer.update_balance(account, amount) end
-    operation_based_on_state(account, operation)
+    fn -> Agent.update(account, &(&1 + amount)) end
+    |> action_based_on_state(account)
   end
 
-  defp operation_based_on_state(account, operation) do
-    Process.alive?(account) && operation.() || {:error, :account_closed}
-  end
-end
-
-defmodule BankServer do
-  use GenServer
-
-  def start, do: GenServer.start(BankServer, nil)
-
-  def get_balance(account), do: GenServer.call(account, :get_balance)
-
-  def update_balance(account, amount) do
-    GenServer.cast(account, {:update_balance, amount})
-  end
-
-  @impl GenServer
-  def init(_), do: {:ok, %{balance: 0}}
-
-  @impl GenServer
-  def handle_call(:get_balance, _, account) do
-    {:reply, account.balance, account}
-  end
-
-  @impl GenServer
-  def handle_cast({:update_balance, amount}, account) do
-    {:noreply, updated_balance(account, amount)}
-  end
-
-  defp updated_balance(account, amount) do
-    Map.put(account, :balance, account.balance + amount)
+  defp action_based_on_state(action, account) do
+    Process.alive?(account) && action.() || {:error, :account_closed}
   end
 end
